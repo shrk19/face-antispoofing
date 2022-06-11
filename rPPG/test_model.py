@@ -6,8 +6,8 @@ import cv2
 from keras.models import model_from_json
 from keras.preprocessing.image import img_to_array
 #########################
-from rPPG.rPPG_Extracter import *
-from rPPG.rPPG_lukas_Extracter import *
+from rPPG_Extracter import *
+from rPPG_lukas_Extracter import *
 #########################
 
 
