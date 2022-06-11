@@ -12,23 +12,23 @@ from rPPG_lukas_Extracter import *
 
 
 # load YAML and create model
-yaml_file = open("trained_model/RGB_rPPG_merge_softmax_.yaml", 'r')
-loaded_model_yaml = yaml_file.read()
-yaml_file.close()
-model = model_from_yaml(loaded_model_yaml)
+# yaml_file = open("trained_model/RGB_rPPG_merge_softmax_.yaml", 'r')
+# loaded_model_yaml = yaml_file.read()
+# yaml_file.close()
+# model = model_from_yaml(loaded_model_yaml)
 # load weights into new model
-model.load_weights("trained_model/RGB_rPPG_merge_softmax_.h5")
-print("[INFO] Model is loaded from disk")
+# model.load_weights("trained_model/RGB_rPPG_merge_softmax_.h5")
+# print("[INFO] Model is loaded from disk")
 
 
 # load model
-json_file = open('/content/face-anti-spoofing/trained_model/RGB_rPPG_merge_softmax_.json', 'r')  
+json_file = open('/content/face-antispoofing/trained_model/RGB_rPPG_merge_softmax_.json', 'r')  
 loaded_model_json = json_file.read()
 json_file.close()
 model = model_from_json(loaded_model_json)
 
 #load weights and compile
-model.load_weights("/content/face-anti-spoofing/trained_model/RGB_rPPG_merge_softmax_.h5")
+model.load_weights("/content/face-antispoofing/trained_model/RGB_rPPG_merge_softmax_.h5")
 #model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 
