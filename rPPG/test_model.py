@@ -13,13 +13,13 @@ from google.colab.patches import cv2_imshow
 
 
 # load YAML and create model
-yaml_file = open("trained_model/RGB_rPPG_merge_softmax_.yaml", 'r')
-loaded_model_yaml = yaml_file.read()
-yaml_file.close()
-model = model_from_yaml(loaded_model_yaml)
+# yaml_file = open("trained_model/RGB_rPPG_merge_softmax_.yaml", 'r')
+# loaded_model_yaml = yaml_file.read()
+# yaml_file.close()
+# model = model_from_yaml(loaded_model_yaml)
 # load weights into new model
-model.load_weights("trained_model/RGB_rPPG_merge_softmax_.h5")
-print("[INFO] Model is loaded from disk")
+# model.load_weights("trained_model/RGB_rPPG_merge_softmax_.h5")
+# print("[INFO] Model is loaded from disk")
 
 
 # load model
