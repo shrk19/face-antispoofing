@@ -6,34 +6,44 @@ import cv2
 from keras.models import model_from_json
 from keras.preprocessing.image import img_to_array
 #########################
-from rPPG_Extracter import *
-from rPPG_lukas_Extracter import *
+from rPPG.rPPG_Extracter import *
+from rPPG.rPPG_lukas_Extracter import *
+from google.colab.patches import cv2_imshow
 #########################
 
 
 # load YAML and create model
-# yaml_file = open("trained_model/RGB_rPPG_merge_softmax_.yaml", 'r')
-# loaded_model_yaml = yaml_file.read()
-# yaml_file.close()
-# model = model_from_yaml(loaded_model_yaml)
+yaml_file = open("trained_model/RGB_rPPG_merge_softmax_.yaml", 'r')
+loaded_model_yaml = yaml_file.read()
+yaml_file.close()
+model = model_from_yaml(loaded_model_yaml)
 # load weights into new model
-# model.load_weights("trained_model/RGB_rPPG_merge_softmax_.h5")
-# print("[INFO] Model is loaded from disk")
+model.load_weights("trained_model/RGB_rPPG_merge_softmax_.h5")
+print("[INFO] Model is loaded from disk")
 
 
 # load model
-json_file = open('/content/face-antispoofing/trained_model/RGB_rPPG_merge_softmax_.json', 'r')  
+json_file = open('/content/face-anti-spoofing/trained_model/RGB_rPPG_merge_softmax_.json', 'r')  
 loaded_model_json = json_file.read()
 json_file.close()
 model = model_from_json(loaded_model_json)
 
 #load weights and compile
-model.load_weights("/content/face-antispoofing/trained_model/RGB_rPPG_merge_softmax_.h5")
+model.load_weights("/content/face-anti-spoofing/trained_model/RGB_rPPG_merge_softmax_.h5")
 #model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 dim = (128,128)
 def get_rppg_pred(frame):
+    # this function is used to return the rppg predictions of images
+
+    # parameters:
+    #   the specific frame
+
+    # return:
+    #   the rppg predictaion
+
+
     use_classifier = True  # Toggles skin classifier
     use_flow = False       # (Mixed_motion only) Toggles PPG detection with Lukas Kanade optical flow          
     sub_roi = []           # If instead of skin classifier, forhead estimation should be used set to [.35,.65,.05,.15]
@@ -80,6 +90,16 @@ def get_rppg_pred(frame):
     
 
 def make_pred(li):
+
+
+    # this function predict a single image recording to its rppg prediction and the image itself
+
+    # parameters:
+    #   list: a list with first element the image and second the rppg prediction
+
+    # return 
+    #   prediction that shows if the image is an attack or if it is not
+
     [single_img,rppg] = li
     single_img = cv2.resize(single_img, dim)
     single_x = img_to_array(single_img)
@@ -88,31 +108,23 @@ def make_pred(li):
     return single_pred
 
 
-    
-cascPath = 'rPPG/util/haarcascade_frontalface_default.xml'
+cascPath = '/content/face-antispoofing/rPPG/util/haarcascade_frontalface_default.xml'
+
 faceCascade = cv2.CascadeClassifier(cascPath)
 
+file_name = "/content/face-antispoofing/rPPG/group-pic.jpg"
+img = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
 
-video_capture = cv2.VideoCapture(0)
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+faces = faceCascade.detectMultiScale(gray,1.1,5)
 
 collected_results = []
 counter = 0          # count collected buffers
 frames_buffer = 5    # how many frames to collect to check for
 accepted_falses = 1  # how many should have zeros to say it is real
-while True:
-    # Capture frame-by-frame
-    ret, frame = video_capture.read()
-    if ret:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = faceCascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5
-        )
-        
-        # Draw a rectangle around the faces
-        for (x, y, w, h) in faces:
-            sub_img=frame[y:y+h,x:x+w]
+
+for (x, y, w, h) in faces:
+            sub_img=img[y:y+h,x:x+w]
             rppg_s = get_rppg_pred(sub_img)
             rppg_s = rppg_s.T
 
@@ -121,24 +133,92 @@ while True:
             collected_results.append(np.argmax(pred))
             counter += 1
 
-            cv2.putText(frame,"Real: "+str(pred[0][0]), (50,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
-            cv2.putText(frame,"Fake: "+str(pred[0][1]), (50,60), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
+            cv2.putText(img,"Real: "+str(pred[0][0]), (50,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
+            cv2.putText(img,"Fake: "+str(pred[0][1]), (50,60), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
             if len(collected_results) == frames_buffer:
                 #print(sum(collected_results))
                 if sum(collected_results) <= accepted_falses:
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                    cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 else:
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                    cv2.rectangle(img, (x, y), (x+w, y+h), (0, 0, 255), 2)
                 collected_results.pop(0)
 
-
-
-        # Display the resulting frame
-        cv2.imshow('To quit press q', frame)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-# When everything is done, release the capture
-video_capture.release()
+# Display the resulting frame
+cv2_imshow('To quit press q', img)
+cv2.waitKey()
 cv2.destroyAllWindows()
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# cascPath = 'rPPG/util/haarcascade_frontalface_default.xml'
+# faceCascade = cv2.CascadeClassifier(cascPath)
+
+
+# video_capture = cv2.VideoCapture(0)
+
+# collected_results = []
+# counter = 0          # count collected buffers
+# frames_buffer = 5    # how many frames to collect to check for
+# accepted_falses = 1  # how many should have zeros to say it is real
+# while True:
+#     # Capture frame-by-frame
+#     ret, frame = video_capture.read()
+#     if ret:
+#         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+#         faces = faceCascade.detectMultiScale(
+#             gray,
+#             scaleFactor=1.1,
+#             minNeighbors=5
+#         )
+        
+#         # Draw a rectangle around the faces
+#         for (x, y, w, h) in faces:
+#             sub_img=frame[y:y+h,x:x+w]
+#             rppg_s = get_rppg_pred(sub_img)
+#             rppg_s = rppg_s.T
+
+#             pred = make_pred([sub_img,rppg_s])
+
+#             collected_results.append(np.argmax(pred))
+#             counter += 1
+
+#             cv2.putText(frame,"Real: "+str(pred[0][0]), (50,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
+#             cv2.putText(frame,"Fake: "+str(pred[0][1]), (50,60), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), lineType=cv2.LINE_AA)
+#             if len(collected_results) == frames_buffer:
+#                 #print(sum(collected_results))
+#                 if sum(collected_results) <= accepted_falses:
+#                     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+#                 else:
+#                     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
+#                 collected_results.pop(0)
+
+
+
+#         # Display the resulting frame
+#         cv2.imshow('To quit press q', frame)
+
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
+
+# # When everything is done, release the capture
+# video_capture.release()
+
