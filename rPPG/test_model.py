@@ -23,13 +23,13 @@ from google.colab.patches import cv2_imshow
 
 
 # load model
-json_file = open('/content/face-anti-spoofing/trained_model/RGB_rPPG_merge_softmax_.json', 'r')  
+json_file = open('/content/face-antispoofing/trained_model/RGB_rPPG_merge_softmax_.json', 'r')  
 loaded_model_json = json_file.read()
 json_file.close()
 model = model_from_json(loaded_model_json)
 
 #load weights and compile
-model.load_weights("/content/face-anti-spoofing/trained_model/RGB_rPPG_merge_softmax_.h5")
+model.load_weights("/content/face-antispoofing/trained_model/RGB_rPPG_merge_softmax_.h5")
 #model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 
